@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { env } from '../../core/environment/environment.dev';
+import { User } from '../tasks/tasks.component';
 
 interface Project {
   projectId?: number;
@@ -137,11 +138,19 @@ interface Project {
               <option value="LOW">Low</option>
             </select>
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Team Leader Name</label>
-            <input [(ngModel)]="form.teamLeaderName" type="text" placeholder="Team Leader Name"
-              class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-purple-400" />
-          </div>
+       <div>
+  <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Team Leader</label>
+
+  <select
+    [(ngModel)]="form.teamLeaderName"
+    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-purple-400"
+  >
+    <option [ngValue]="null" disabled>Select team leader</option>
+    <option *ngFor="let leader of teamLeaders" [ngValue]="leader.name">
+      {{ leader.name }}
+    </option>
+  </select>
+</div>
         </div>
         <div *ngIf="formError" class="mt-3 text-red-500 text-xs">{{ formError }}</div>
         <div class="flex gap-3 mt-6">
@@ -241,7 +250,7 @@ interface Project {
 })
 export class ProjectsComponent implements OnInit {
   private readonly API = `${env.API_URL}/projects`;
-
+ private readonly TEAM_LEADERS_API = `${env.API_URL}/auth/team-leaders`;
   projects: Project[] = [];
   loading = true;
   formLoading = false;
@@ -273,31 +282,90 @@ export class ProjectsComponent implements OnInit {
     return { headers: new HttpHeaders({ Authorization: `Bearer ${this.authService.getToken()}` }) };
   }
 
-  ngOnInit() { this.loadProjects(); }
+ ngOnInit() {
+    this.loadProjects();
 
+    if (this.isManager) {
+      this.loadTeamLeaders();
+    }
+  }
   loadProjects() {
     this.loading = true;
-    const url = this.isManager ? this.API : this.isLeader ? `${this.API}/leader-view` : `${this.API}/member-view`;
+
+    const url = this.isManager
+      ? this.API
+      : this.isLeader
+        ? `${this.API}/leader-view`
+        : `${this.API}/member-view`;
+
     this.http.get<Project[]>(url, this.headers()).subscribe({
-      next: (p) => { this.projects = p; this.loading = false; this.cdr.markForCheck(); },
-      error: () => { this.loading = false; this.cdr.markForCheck(); },
+      next: (p) => {
+        this.projects = p;
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+    loadTeamLeaders() {
+    this.http.get<User[]>(this.TEAM_LEADERS_API, this.headers()).subscribe({
+      next: (leaders) => {
+        this.teamLeaders = leaders;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.log('Load team leaders error:', err);
+        this.formError = 'Failed to load team leaders.';
+        this.cdr.markForCheck();
+      },
     });
   }
 
-  openCreate() {
-    this.form = { title: '', description: '', deadline: '', priority: 'MEDIUM', teamLeaderName: null };
-    this.formError = ''; this.showCreate = true; this.cdr.markForCheck();
-  }
+openCreate() {
+  this.form = {
+    title: '',
+    description: '',
+    deadline: '',
+    priority: 'MEDIUM',
+    teamLeaderName: null
+  };
+
+  this.formError = '';
+  this.showCreate = true;
+  this.cdr.markForCheck();
+}
   closeCreate() { this.showCreate = false; this.cdr.markForCheck(); }
 
-  submitCreate() {
-    if (!this.form.title || !this.form.deadline) { this.formError = 'Title and deadline are required.'; return; }
-    this.formLoading = true;
-    this.http.post<Project>(this.API, this.form, this.headers()).subscribe({
-      next: (p) => { this.projects = [p, ...this.projects]; this.formLoading = false; this.showCreate = false; this.cdr.markForCheck(); },
-      error: () => { this.formError = 'Failed to create project.'; this.formLoading = false; this.cdr.markForCheck(); },
-    });
+submitCreate() {
+  if (!this.form.title || !this.form.deadline || !this.form.teamLeaderName) {
+    this.formError = 'Title, deadline and team leader are required.';
+    return;
   }
+
+  this.formLoading = true;
+  this.formError = '';
+
+  this.http.post<Project>(this.API, this.form, this.headers()).subscribe({
+    next: (p) => {
+      this.projects = [p, ...this.projects];
+      this.formLoading = false;
+      this.showCreate = false;
+      this.cdr.markForCheck();
+    },
+    error: (err) => {
+      console.log('Create project error:', err);
+      this.formError =
+        err?.error?.message ||
+        err?.error ||
+        'Failed to create project.';
+      this.formLoading = false;
+      this.cdr.markForCheck();
+    },
+  });
+}
 
   openEdit(p: Project) {
     this.selectedProject = p;
@@ -326,4 +394,5 @@ export class ProjectsComponent implements OnInit {
       error: () => { this.formLoading = false; this.cdr.markForCheck(); },
     });
   }
+  teamLeaders: User[] = [];
 }

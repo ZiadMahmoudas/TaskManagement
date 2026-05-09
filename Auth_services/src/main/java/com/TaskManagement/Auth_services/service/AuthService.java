@@ -2,6 +2,7 @@ package com.TaskManagement.Auth_services.service;
 
 import com.TaskManagement.Auth_services.DTOs.AuthResponse;
 import com.TaskManagement.Auth_services.DTOs.LoginRequest;
+import com.TaskManagement.Auth_services.entity.Role;
 import com.TaskManagement.Auth_services.entity.User;
 import com.TaskManagement.Auth_services.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,4 +55,12 @@ public class AuthService {
 
         return new AuthResponse(token);
     }
+    public List<User> getAllTeamMembers() {
+        return userRepository.findByRole(Role.TEAM_MEMBER);
+    }
+
+    public List<User> getAllTeamLeaders() {
+        return userRepository.findByRole(Role.TEAM_LEADER);
+    }
+
 }

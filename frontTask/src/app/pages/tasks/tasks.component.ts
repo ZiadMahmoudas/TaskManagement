@@ -17,7 +17,7 @@ interface Task {
   verified?: boolean;
 }
 interface Project { projectId: number; title: string; }
-interface User    { userId: number; username: string; }
+export interface User    { id: number; name: string; }
 
 @Component({
   selector: 'app-tasks',
@@ -275,7 +275,7 @@ interface User    { userId: number; username: string; }
           <select [(ngModel)]="assignUserId"
             class="w-full px-3 py-2.5 bg-[#f6f7fb] border-[1.5px] border-black/[0.07] rounded-[11px] text-[13.5px] text-[#111827] outline-none transition-all focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,.12)] focus:bg-white">
             <option [ngValue]="null" disabled>Select a member</option>
-            <option *ngFor="let u of users" [ngValue]="u.userId">{{ u.username }}</option>
+            <option *ngFor="let u of users" [ngValue]="u.id">{{ u.name }}</option>
           </select>
         </div>
         <div *ngIf="formError" class="text-[12px] text-red-500 font-semibold mt-2">{{ formError }}</div>
@@ -318,6 +318,7 @@ interface User    { userId: number; username: string; }
 })
 export class TasksComponent implements OnInit {
   private readonly API = `${env.API_URL}/tasks`;
+  private readonly APIURL = `${env.API_URL}/auth/team-members`;
 
   projects: Project[] = [];
   users: User[]       = [];
@@ -378,17 +379,24 @@ export class TasksComponent implements OnInit {
     });
   }
 
-  loadUsers() {
-    this.http.get<User[]>(`${env.API_URL}/users`, this.headers()).subscribe({
-      next: (u) => { this.users = u; this.cdr.markForCheck(); },
-      error: () => {},
-    });
-  }
+loadUsers() {
+  this.http.get<User[]>(this.APIURL, this.headers()).subscribe({
+    next: (u) => {
+      this.users = u;
+      this.cdr.markForCheck();
+    },
+    error: (err) => {
+      console.log('Load team members error:', err);
+      this.globalError = 'Failed to load team members.';
+      this.cdr.markForCheck();
+    },
+  });
+}
 
-  getUserName(id?: number): string {
-    if (!id) return '—';
-    return this.users.find(u => u.userId === id)?.username ?? `#${id}`;
-  }
+getUserName(id?: number): string {
+  if (!id) return '—';
+  return this.users.find(u => u.id === id)?.name ?? `#${id}`;
+}
 
   openCreate() {
     this.form = { title: '', description: '', priority: 'MEDIUM', projectId: null };
@@ -411,14 +419,37 @@ export class TasksComponent implements OnInit {
   }
   closeAssign() { this.showAssign = false; this.cdr.markForCheck(); }
 
-  submitAssign() {
-    if (!this.selectedTask?.taskId || !this.assignUserId) { this.formError = 'Please select a team member.'; return; }
-    this.formLoading = true;
-    this.http.put<Task>(`${this.API}/${this.selectedTask.taskId}/assign`, { assignedToUserId: this.assignUserId }, this.headers()).subscribe({
-      next: (u) => { this.tasks = this.tasks.map(t => t.taskId === u.taskId ? u : t); this.formLoading = false; this.showAssign = false; this.cdr.markForCheck(); },
-      error: ()  => { this.formError = 'Failed to assign task.'; this.formLoading = false; this.cdr.markForCheck(); },
-    });
+submitAssign() {
+  if (!this.selectedTask?.taskId || !this.assignUserId) {
+    this.formError = 'Please select a team member.';
+    return;
   }
+
+  this.formLoading = true;
+  this.formError = '';
+
+  this.http.put<Task>(
+    `${this.API}/${this.selectedTask.taskId}/assign/${this.assignUserId}`,
+    null,
+    this.headers()
+  ).subscribe({
+    next: (u) => {
+      this.tasks = this.tasks.map(t => t.taskId === u.taskId ? u : t);
+      this.formLoading = false;
+      this.showAssign = false;
+      this.cdr.markForCheck();
+    },
+    error: (err) => {
+      console.log('Assign task error:', err);
+      this.formError =
+        err?.error?.message ||
+        err?.error ||
+        'Failed to assign task.';
+      this.formLoading = false;
+      this.cdr.markForCheck();
+    },
+  });
+}
 
   startTask(t: Task) {
     if (!t.taskId) return;

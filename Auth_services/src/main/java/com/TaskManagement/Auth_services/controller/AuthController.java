@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -29,6 +31,25 @@ public class AuthController {
         } catch (Exception e) {
             // لو البيانات غلط يرجع 401 بدل ما يضرب 500
             return ResponseEntity.status(401).body("Invalid username or password!");
+        }
+    }
+    @GetMapping("/team-members")
+    public ResponseEntity<?> getAllTeamMembers() {
+        try {
+            List<User> members = authService.getAllTeamMembers();
+            return ResponseEntity.ok(members);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Something went wrong!");
+        }
+    }
+
+    @GetMapping("/team-leaders")
+    public ResponseEntity<?> getAllTeamLeaders() {
+        try {
+            List<User> leaders = authService.getAllTeamLeaders();
+            return ResponseEntity.ok(leaders);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Something went wrong!");
         }
     }
 }
