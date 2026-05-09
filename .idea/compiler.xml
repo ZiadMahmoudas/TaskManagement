@@ -19,7 +19,7 @@
         </processorPath>
         <module name="project_service" />
       </profile>
-      <profile name="Annotation profile for API_Category" enabled="true">
+      <profile name="Annotation profile for Profile_service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />

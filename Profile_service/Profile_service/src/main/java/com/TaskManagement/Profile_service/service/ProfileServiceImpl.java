@@ -4,13 +4,14 @@ import com.TaskManagement.Profile_service.dto.ProfileDto;
 import com.TaskManagement.Profile_service.entity.Profile;
 import com.TaskManagement.Profile_service.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
-
-    private final ProfileRepository profileRepository;
+    @Autowired
+    private  ProfileRepository profileRepository;
 
     @Override
     public ProfileDto getProfileByUserId(String userId) {

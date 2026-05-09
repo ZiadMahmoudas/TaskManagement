@@ -4,7 +4,9 @@ import com.TaskManagement.task_service.dto.CreateTaskRequest;
 import com.TaskManagement.task_service.entity.Task;
 import com.TaskManagement.task_service.entity.TaskStatus;
 import com.TaskManagement.task_service.service.TaskService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -15,12 +17,12 @@ import java.util.List;
 @RequestMapping("/api/tasks")
 @RequiredArgsConstructor
 public class TaskController {
-
-    private final TaskService taskService;
+    @Autowired
+    private  TaskService taskService;
 
     @PostMapping
     @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<Task> createTask(@RequestBody CreateTaskRequest createTaskRequest) {
+    public ResponseEntity<Task> createTask(@Valid @RequestBody CreateTaskRequest createTaskRequest) {
         return ResponseEntity.ok(taskService.createTask(createTaskRequest));
     }
 

@@ -3,14 +3,15 @@ package com.TaskManagement.task_service.service;
 import com.TaskManagement.task_service.entity.Notification;
 import com.TaskManagement.task_service.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
-
-    private final NotificationRepository notificationRepository;
+    @Autowired
+    private NotificationRepository notificationRepository;
 
     public void sendNotification(String userId, String message) {
         Notification notification = Notification.builder()

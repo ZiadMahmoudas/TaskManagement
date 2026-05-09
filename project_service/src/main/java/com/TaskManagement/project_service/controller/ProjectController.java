@@ -5,7 +5,9 @@ import com.TaskManagement.project_service.dto.UpdateProjectRequest;
 import com.TaskManagement.project_service.entity.Project;
 import com.TaskManagement.project_service.entity.ProjectStatus;
 import com.TaskManagement.project_service.service.ProjectService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -17,19 +19,19 @@ import java.util.Map;
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
 public class ProjectController {
-
-    private final ProjectService projectService;
+    @Autowired
+    private  ProjectService projectService;
 
     @PostMapping
     @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<Project> createProject(@RequestBody CreateProjectRequest createProjectRequest) {
+    public ResponseEntity<Project> createProject(@Valid @RequestBody CreateProjectRequest createProjectRequest) {
         return ResponseEntity.ok(projectService.createProject(createProjectRequest));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<Project> updateProject(@PathVariable Long id,
-                                                 @RequestBody UpdateProjectRequest updateProjectRequest) {
+                                                 @Valid @RequestBody UpdateProjectRequest updateProjectRequest) {
         return ResponseEntity.ok(projectService.updateProject(id, updateProjectRequest));
     }
 
