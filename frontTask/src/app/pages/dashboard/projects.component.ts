@@ -172,11 +172,11 @@ interface Project {
             >
 
             <select
-              [(ngModel)]="form.teamLeaderName"
+              [(ngModel)]="form.teamLeaderId"
               class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-purple-400"
             >
               <option [ngValue]="null" disabled>Select team leader</option>
-              <option *ngFor="let leader of teamLeaders" [ngValue]="leader.name">
+              <option *ngFor="let leader of teamLeaders" [ngValue]="leader.id">
                 {{ leader.name }}
               </option>
             </select>
@@ -342,7 +342,7 @@ export class ProjectsComponent implements OnInit {
     description: '',
     deadline: '',
     priority: 'MEDIUM',
-    teamLeaderName: null as any,
+    teamLeaderId: null as number | null,
   };
   editForm = { title: '', description: '', deadline: '', priority: '', status: '' };
 
@@ -413,47 +413,63 @@ export class ProjectsComponent implements OnInit {
   }
 
   openCreate() {
-    this.form = {
-      title: '',
-      description: '',
-      deadline: '',
-      priority: 'MEDIUM',
-      teamLeaderName: null,
-    };
+  this.form = {
+    title: '',
+    description: '',
+    deadline: '',
+    priority: 'MEDIUM',
+    teamLeaderId: null,
+  };
 
-    this.formError = '';
-    this.showCreate = true;
-    this.cdr.markForCheck();
-  }
+  this.formError = '';
+  this.showCreate = true;
+  this.cdr.markForCheck();
+}
   closeCreate() {
     this.showCreate = false;
     this.cdr.markForCheck();
   }
 
-  submitCreate() {
-    if (!this.form.title || !this.form.deadline || !this.form.teamLeaderName) {
-      this.formError = 'Title, deadline and team leader are required.';
-      return;
-    }
-
-    this.formLoading = true;
-    this.formError = '';
-
-    this.http.post<Project>(this.API, this.form, this.headers()).subscribe({
-      next: (p) => {
-        this.projects = [p, ...this.projects];
-        this.formLoading = false;
-        this.showCreate = false;
-        this.cdr.markForCheck();
-      },
-      error: (err) => {
-        console.log('Create project error:', err);
-        this.formError = err?.error?.message || err?.error || 'Failed to create project.';
-        this.formLoading = false;
-        this.cdr.markForCheck();
-      },
-    });
+ submitCreate() {
+  if (!this.form.title || !this.form.deadline || !this.form.teamLeaderId) {
+    this.formError = 'Title, deadline and team leader are required.';
+    return;
   }
+
+  this.formLoading = true;
+  this.formError = '';
+
+  const body = {
+    title: this.form.title,
+    description: this.form.description,
+    deadline: this.form.deadline,
+    priority: this.form.priority,
+    teamLeaderId: this.form.teamLeaderId,
+  };
+
+  console.log('Create Project Body:', body);
+
+  this.http.post<Project>(this.API, body, this.headers()).subscribe({
+    next: (p) => {
+      this.projects = [p, ...this.projects];
+      this.formLoading = false;
+      this.showCreate = false;
+      this.cdr.markForCheck();
+    },
+    error: (err) => {
+      console.log('Create project error:', err);
+      console.log('Backend error body:', err.error);
+
+      this.formError =
+        err?.error?.message ||
+        JSON.stringify(err?.error) ||
+        'Failed to create project.';
+
+      this.formLoading = false;
+      this.cdr.markForCheck();
+    },
+  });
+}
 
   openEdit(p: Project) {
     this.selectedProject = p;
@@ -497,8 +513,8 @@ export class ProjectsComponent implements OnInit {
 
   confirmDelete(p: Project) {
     this.selectedProject = p;
-    this.cdr.markForCheck();
     this.showDelete = false;
+    this.cdr.markForCheck();
   }
   closeDelete() {
     this.showDelete = false;
